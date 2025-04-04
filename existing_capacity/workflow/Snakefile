@@ -1,0 +1,153 @@
+import pathlib
+cwd = pathlib.Path().resolve()
+
+plots = True
+csv_tech_ec = True
+
+# inputs
+excel_solar = "resources/GEM/Global-Solar-Power-Tracker-February-2025.xlsx"
+excel_wind = "resources/GEM/Global-Wind-Power-Tracker-February-2025.xlsx"
+excel_nuclear = "resources/GEM/Global-Nuclear-Power-Tracker-July-2024.xlsx"
+
+# GEM output file
+gem_output_path = "gem_installed_capacities.csv"
+ods_output_file = "highres_technoeconomic_database_updated.ods"
+
+# years for estimation
+projected_years = [2050]
+
+# Techno-economic file
+ods_file = "highres_technoeconomic_database.ods"
+
+existing_pcap_r_path = "existing_pcap_r_{year}.csv"
+existing_pcap_z_path = "existing_pcap_z_{year}.csv"
+gen_lim_z_path = "gen_lim_z_{year}.csv"
+
+
+# shape files
+onshore_shapefile = "europe_onshore.geojson"
+offshore_shapefile = "europe_offshore.geojson"
+
+
+countries = [
+    "AT",
+    "BE",
+    "BG",
+    "CH",
+    "CZ",
+    "DE",
+    "DK",
+    "EE",
+    "ES",
+    "FI",
+    "FR",
+    "UK",
+    "GR",
+    "HR",
+    "HU",
+    "IE",
+    "IT",
+    "LT",
+    "LU",
+    "LV",
+    "NL",
+    "NO",
+    "PL",
+    "PT",
+    "RO",
+    "SE",
+    "SI",
+    "SK",
+  ]
+
+
+workpath = cwd / pathlib.Path("results")
+resources_path = cwd / pathlib.Path("resources")
+
+localrules:
+    all,
+    build_exist_cap,
+    build_highres_input,
+    plotting_existing_cap,
+
+
+rule all:
+    input:
+        expand(workpath / "existing_cap_{year}.finished", year=projected_years)
+
+rule build_exist_cap:
+    # Create a csv with columns:
+    # "project_name", "Technology","country",
+    # "iso_code","lat","lon","capacity_MW",
+    # "commissioning_year", "estimated_retirement_year"
+    input:
+        excel_solar = excel_solar,
+        excel_wind = excel_wind,
+        excel_nuclear = excel_nuclear,
+    params:
+        zones = countries,
+    output:
+        existing_cap = workpath / "installed_capacities.csv",
+    notebook:
+        "notebooks/build_exist_cap.ipynb"
+
+rule build_highres_input:
+    input:
+        existing_cap = rules.build_exist_cap.output.existing_cap,
+        onshore_shapefile = resources_path / "shapes" / onshore_shapefile,
+        offshore_shapefile = resources_path / "shapes" / onshore_shapefile,
+        ods_file = resources_path / ods_file,
+    params:
+        ods_output_file = workpath / ods_output_file,
+    output:
+        geodata_file = temp(workpath / "exist_pcap_geom_{year}.geojson"),
+        existing_pcap_z_path = (
+            workpath / existing_pcap_z_path
+            if csv_tech_ec
+            else []
+        ),
+        existing_pcap_r_path = (
+            workpath / existing_pcap_r_path
+            if csv_tech_ec
+            else []
+        ),
+        gen_lim_z_path = (
+            workpath / gen_lim_z_path
+            if csv_tech_ec
+            else []
+        ),
+    notebook:
+        "notebooks/build_highres_exist_cap.ipynb"
+
+rule plotting_existing_cap:
+    input:
+        geodata_file = rules.build_highres_input.output.geodata_file,
+        onshore_shapefile = resources_path / "shapes" / onshore_shapefile,
+        offshore_shapefile = resources_path / "shapes" / onshore_shapefile,
+    params:
+        plants_in_europe = workpath / "plants_in_europe.png",
+        pcap_in_eur_year = lambda wildcards: workpath / f"capacity_by_nuts2_{wildcards.year}.png",
+    output:
+        plot_status = temp(touch(workpath / "plots_{year}.finished"))
+    notebook:
+        "notebooks/exist_pcap_plot.ipynb"
+
+rule exist_cap_finish:
+    input:
+        rules.build_highres_input.output.geodata_file,
+        (
+            rules.plotting_existing_cap.output.plot_status
+            if plots
+            else []
+        ),
+    output:
+        temp(touch(workpath / "existing_cap_{year}.finished"))
+
+
+
+
+
+
+
+
+        
