@@ -1,0 +1,17 @@
+name: highres_existing_capacities
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python
+  - jupyter
+  - numpy
+  - pandas
+  - geopandas
+  - snakemake-minimal
+  - matplotlib
+  - python-calamine
+  - pip
+  - pip:
+    - pyexcel-ods
+    - openpyxl
