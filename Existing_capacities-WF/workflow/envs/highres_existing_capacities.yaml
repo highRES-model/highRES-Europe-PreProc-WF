@@ -12,6 +12,7 @@ dependencies:
   - matplotlib
   - python-calamine
   - pip
+  - nbformat<5.1
   - pip:
     - pyexcel-ods
     - openpyxl
