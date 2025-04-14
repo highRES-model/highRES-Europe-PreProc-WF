@@ -11,6 +11,8 @@ demand_out_path= "final_demand/"
 # choose EV activity profiles, either DESSTINEE or EINA 2050 EV
 ev_act_profile="DESSTINEE"
 
+annual_hdd_scaling=False
+
 time_zone_file=abs_root_path / "resources\\timezones\\europe_countries_timezones.csv"
 
 countries= [
@@ -106,9 +108,9 @@ rule sub_existing_heat_cool:
 rule calc_heat_cool_demand_ts:
     input:
         hdd_annual_totals=workpath / ("hdd_annual_totals\\annual_hdd_"+str(degree_day_years[0])+"-"+str(degree_day_years[-1])+".csv"),
-        ued_annual= abs_root_path / "resources\\ued_heat_annual\\europe_useful_space_h&c_demand_2012.csv",
+        ued_annual= abs_root_path / "resources\\wimby\\heat\\CLI_ISO2_heat_twh.csv",
         cooling_annual=rules.sub_existing_heat_cool.output.fit_stats,
-        heat_db = abs_root_path / "resources\\heat_scenarios\\h&c_and_tra_dem_scen.xlsx",
+        #heat_db = abs_root_path / "resources\\heat_scenarios\\h&c_and_tra_dem_scen.xlsx",
         heatpump_profiles = abs_root_path / "resources\\activity_profiles\\heat_and_cool_profiles.csv",
         time_zones=time_zone_file,
         degree_days=workpath / "degree_days\\country_degree_days_{year}_atlite.csv",
@@ -116,6 +118,7 @@ rule calc_heat_cool_demand_ts:
         workpath / (demand_out_path + "heating_time_series_{year}.csv"),
     params:
         countries=countries,
+        annual_hdd_scaling=annual_hdd_scaling,
     notebook:
         "notebooks/calc_heat_cool_demand_ts.ipynb"
         
@@ -123,7 +126,7 @@ rule calc_ev_demand_ts:
     input:
         ev_profiles=abs_root_path / "resources\\activity_profiles\\ev_daily_profile.xlsx",
         time_zones=time_zone_file,
-        ev_annual_dem=abs_root_path / "resources\\ev_dem_annual\\country_car_ev_twh.csv",
+        ev_annual_dem=abs_root_path / "resources\\wimby\\ev\\CLI_ISO2_ev_twh.csv",
     output:
         workpath / (demand_out_path + "ev_time_series_{year}.csv"),
     params:
@@ -132,11 +135,34 @@ rule calc_ev_demand_ts:
     notebook:
         "notebooks/calc_ev_demand_ts.ipynb"
         
+rule calc_ind_demand_ts:
+    input:
+        ind_annual= abs_root_path / "resources/wimby/ind/CLI_ISO2_ind_twh.csv",
+    output:
+        workpath / (demand_out_path + "ind_time_series_{year}.csv"),
+    params:
+        countries=countries,
+    notebook:
+        "notebooks/calc_ind_demand_ts.ipynb"
+        
+rule calc_ups_demand_ts:
+    input:
+        h2_annual= abs_root_path / "resources/wimby/ups/CLI_ISO2_h2_twh.csv",
+        syn_annual= abs_root_path / "resources/wimby/ups/CLI_ISO2_synfuels_twh.csv",
+    output:
+        workpath / (demand_out_path + "ups_time_series_{year}.csv"),
+    params:
+        countries=countries,
+    notebook:
+        "notebooks/calc_ups_demand_ts.ipynb"
+        
 rule build_final_demand_ts:
     input:
+        rules.sub_existing_heat_cool.output[0],
         rules.calc_heat_cool_demand_ts.output[0],
         rules.calc_ev_demand_ts.output[0],
-        rules.sub_existing_heat_cool.output[0],
+        rules.calc_ind_demand_ts.output[0],
+        rules.calc_ups_demand_ts.output[0],
     output:
         workpath / (demand_out_path + "demand_{year}.csv"),
     params:
