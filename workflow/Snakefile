@@ -1,7 +1,6 @@
 import pathlib
 import numpy as np
-import sys
-import asyncio
+import itertools
 
 abs_root_path = pathlib.Path().resolve()
 
@@ -48,7 +47,11 @@ countries= [
 
 degree_day_years=np.arange(2000,2024)
 
-years=[2012]
+years=[2010]
+
+scenarios=["CLI"]
+
+scenarios,years=zip(*itertools.product(scenarios,years))
 
 #years=np.arange(2000,2024)
 
@@ -65,7 +68,7 @@ localrules:
 
 rule all:
     input:
-        expand(workpath / (demand_out_path + "demand_{year}.csv"), year=years)
+        expand(workpath / (demand_out_path + "{scenario}_demand_{year}.csv"), scenario=scenarios, year=years)
         
  
 rule degdays_pop_weighted:
@@ -108,14 +111,14 @@ rule sub_existing_heat_cool:
 rule calc_heat_cool_demand_ts:
     input:
         hdd_annual_totals=workpath / ("hdd_annual_totals\\annual_hdd_"+str(degree_day_years[0])+"-"+str(degree_day_years[-1])+".csv"),
-        ued_annual= abs_root_path / "resources\\wimby\\heat\\CLI_ISO2_heat_twh.csv",
+        ued_annual= abs_root_path / "resources\\wimby\\heat\\{scenario}_ISO2_heat_twh.csv",
         cooling_annual=rules.sub_existing_heat_cool.output.fit_stats,
         #heat_db = abs_root_path / "resources\\heat_scenarios\\h&c_and_tra_dem_scen.xlsx",
         heatpump_profiles = abs_root_path / "resources\\activity_profiles\\heat_and_cool_profiles.csv",
         time_zones=time_zone_file,
         degree_days=workpath / "degree_days\\country_degree_days_{year}_atlite.csv",
     output:
-        workpath / (demand_out_path + "heating_time_series_{year}.csv"),
+        workpath / (demand_out_path + "{scenario}_heating_time_series_{year}.csv"),
     params:
         countries=countries,
         annual_hdd_scaling=annual_hdd_scaling,
@@ -126,9 +129,9 @@ rule calc_ev_demand_ts:
     input:
         ev_profiles=abs_root_path / "resources\\activity_profiles\\ev_daily_profile.xlsx",
         time_zones=time_zone_file,
-        ev_annual_dem=abs_root_path / "resources\\wimby\\ev\\CLI_ISO2_ev_twh.csv",
+        ev_annual_dem=abs_root_path / "resources\\wimby\\ev\\{scenario}_ISO2_ev_twh.csv",
     output:
-        workpath / (demand_out_path + "ev_time_series_{year}.csv"),
+        workpath / (demand_out_path + "{scenario}_ev_time_series_{year}.csv"),
     params:
         countries=countries,
         act_profile=ev_act_profile,
@@ -137,9 +140,9 @@ rule calc_ev_demand_ts:
         
 rule calc_ind_demand_ts:
     input:
-        ind_annual= abs_root_path / "resources/wimby/ind/CLI_ISO2_ind_twh.csv",
+        ind_annual= abs_root_path / "resources/wimby/ind/{scenario}_ISO2_ind_twh.csv",
     output:
-        workpath / (demand_out_path + "ind_time_series_{year}.csv"),
+        workpath / (demand_out_path + "{scenario}_ind_time_series_{year}.csv"),
     params:
         countries=countries,
     notebook:
@@ -147,10 +150,10 @@ rule calc_ind_demand_ts:
         
 rule calc_ups_demand_ts:
     input:
-        h2_annual= abs_root_path / "resources/wimby/ups/CLI_ISO2_h2_twh.csv",
-        syn_annual= abs_root_path / "resources/wimby/ups/CLI_ISO2_synfuels_twh.csv",
+        h2_annual= abs_root_path / "resources/wimby/ups/{scenario}_ISO2_h2_twh.csv",
+        syn_annual= abs_root_path / "resources/wimby/ups/{scenario}_ISO2_synfuels_twh.csv",
     output:
-        workpath / (demand_out_path + "ups_time_series_{year}.csv"),
+        workpath / (demand_out_path + "{scenario}_ups_time_series_{year}.csv"),
     params:
         countries=countries,
     notebook:
@@ -164,7 +167,7 @@ rule build_final_demand_ts:
         rules.calc_ind_demand_ts.output[0],
         rules.calc_ups_demand_ts.output[0],
     output:
-        workpath / (demand_out_path + "demand_{year}.csv"),
+        workpath / (demand_out_path + "{scenario}_demand_{year}.csv"),
     params:
         countries=countries,
     notebook:
