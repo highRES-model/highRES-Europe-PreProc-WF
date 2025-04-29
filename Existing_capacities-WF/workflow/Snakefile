@@ -27,7 +27,9 @@ ods_output_file = "highres_technoeconomic_database_updated.ods"
 
 
 ## Extra options
-
+# Get time series for each technology: nuclear, onshore, offshore, solar
+time_series = True
+time_series_path = "installed_cap_{year}-2050_time_serie.csv"
 # Get plots of the existing power plants and capacities in Europe
 plots = True
 # Get a csv file for the sheets "gen_lim_z", "gen_exist_z", and "gen_exist_r"
@@ -93,6 +95,11 @@ rule build_highres_input:
             if csv_tech_ec
             else []
         ),
+        existing_capacities_full = (
+            temp(workpath / "cap_full_temp_{year}.csv")
+            if time_series
+            else []
+        )
     notebook:
         "notebooks/build_highres_exist_cap.ipynb"
 
@@ -108,6 +115,14 @@ rule plotting_existing_cap:
     notebook:
         "notebooks/exist_pcap_plot.ipynb"
 
+rule build_time_series_country:
+    input:
+        existing_capacities_full = rules.build_highres_input.output.existing_capacities_full,
+    output:
+        time_series_path = workpath / time_series_path,
+    notebook:
+        "notebooks/build_time_series_exist_cap.ipynb"
+
 rule exist_cap_finish:
     input:
         rules.build_highres_input.output.geodata_file,
@@ -116,6 +131,11 @@ rule exist_cap_finish:
             if plots
             else []
         ),
+        (
+            rules.build_time_series_country.output.time_series_path
+            if time_series
+            else []
+        )
     output:
         temp(touch(workpath / "existing_cap_{year}.finished"))
 
