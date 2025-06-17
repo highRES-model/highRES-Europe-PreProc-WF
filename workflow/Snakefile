@@ -45,11 +45,14 @@ countries= [
     "SK",
   ]
 
-degree_day_years=np.arange(2000,2024)
+degree_day_years=np.arange(1995,2024)
 
-years=[2010]
+years=[1995]
 
-scenarios=["CLI"]
+env=["low","medium","high"]
+soc=["low","medium","high"]
+
+scenarios=[f"{s}_{e}" for s,e in list(itertools.product(soc,env))]
 
 scenarios,years=zip(*itertools.product(scenarios,years))
 
@@ -108,6 +111,18 @@ rule sub_existing_heat_cool:
     notebook:
         "notebooks/subtract_existing_heat_cool.ipynb"
         
+rule calc_rsd_com_other_scaling:
+    input:
+        workpath / "based_demands_net_heat_cool\\base_demand_net_heat_cool_2012.csv",
+        rsd_com_other_dem = "resources\\wimby\\rsd_com_other\\{scenario}_ISO2_rsd_com_other_twh.csv",
+    output:
+        workpath / "scaled_base_demands\\{scenario}_demand_rsd_com_scaled_2012.csv",
+    params:
+        countries=countries,
+    notebook:
+        "notebooks/calc_rsd_com_other_scaling.ipynb"
+        
+        
 rule calc_heat_cool_demand_ts:
     input:
         hdd_annual_totals=workpath / ("hdd_annual_totals\\annual_hdd_"+str(degree_day_years[0])+"-"+str(degree_day_years[-1])+".csv"),
@@ -150,8 +165,7 @@ rule calc_ind_demand_ts:
         
 rule calc_ups_demand_ts:
     input:
-        h2_annual= abs_root_path / "resources/wimby/ups/{scenario}_ISO2_h2_twh.csv",
-        syn_annual= abs_root_path / "resources/wimby/ups/{scenario}_ISO2_synfuels_twh.csv",
+        ups_annual= abs_root_path / "resources/wimby/ups/{scenario}_ISO2_ups_twh.csv",
     output:
         workpath / (demand_out_path + "{scenario}_ups_time_series_{year}.csv"),
     params:
@@ -161,7 +175,7 @@ rule calc_ups_demand_ts:
         
 rule build_final_demand_ts:
     input:
-        rules.sub_existing_heat_cool.output[0],
+        rules.calc_rsd_com_other_scaling.output[0],
         rules.calc_heat_cool_demand_ts.output[0],
         rules.calc_ev_demand_ts.output[0],
         rules.calc_ind_demand_ts.output[0],
