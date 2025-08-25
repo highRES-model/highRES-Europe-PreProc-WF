@@ -1,0 +1,142 @@
+# Load packages
+import itertools
+import pandas as pd
+import pathlib
+
+# Load parameters, paths and wildcards from config
+
+euRiverPath = config["paths"]["euRiver"]
+euroshape = config["paths"]["euroshape"]
+powerlinePath = config["paths"]["powerlines"]
+railPath = config["paths"]["rail"]
+airportPath = config["paths"]["airports"]
+glacierPath = config["paths"]["glaciers"]
+roads_motorwayPath = config["paths"]["roads_motorways"]
+roads_primaryPath = config["paths"]["roads_primary"]
+militaryPath = config["paths"]["military"]
+radarPath = config["paths"]["radar"]
+shippingHighPath = config["paths"]["shipping_high"]
+shippingMedPath = config["paths"]["shipping_med"]
+fixed_platformsPath = config["paths"]["fixed_platforms"]
+floating_platformsPath = config["paths"]["float_platforms"]
+pipelinesPath = config["paths"]["pipelines"]
+demPath = config["paths"]["copernicus_DEM"]
+luisaPath = config["paths"]["luisa"]
+
+desired_regions = config["parameters"]["desired_regions"]
+buffer_dict = config["parameters"]["buffer_distances"]
+hydrology_buffer = config["parameters"]["hydrology_buffer"]
+offshore_buffer = config["parameters"]["offshore_buffer"]
+maximum_slope = config["parameters"]["maximum_slope"]
+
+# --- Main ---
+
+localrules:
+    all,
+    build_techExclusions,
+    build_slope,
+    offshoreInfraExcl,
+    merge_techExclusions,
+
+rule all:
+    input:
+        expand(config["target"]),
+
+rule build_techExclusions:
+    input:
+        euRiverPath=euRiverPath,
+        euroshape=euroshape,
+        powerlinePath=powerlinePath,
+        railPath=railPath,
+        airportPath=airportPath,
+        glacierPath=glacierPath,
+        roads_motorwayPath=roads_motorwayPath,
+        roads_primaryPath=roads_primaryPath,
+        militaryPath=militaryPath,
+        radarPath=radarPath,
+        shippingHighPath=shippingHighPath,
+        shippingMedPath=shippingMedPath,
+    output:
+        airportsTiff='results/individual_exclusions/airport_airports_buffered.tif',
+        powerlines='results/individual_exclusions/powerlines_powerlines_buffered.tif',
+        rail_narrow='results/individual_exclusions/rail_narrow_buffered.tif',
+        rail_rail='results/individual_exclusions/rail_rail_buffered.tif',
+        road_motorways_motor='results/individual_exclusions/roads_motorways_motorway_buffered.tif',
+        road_motorways_trunk='results/individual_exclusions/roads_motorways_trunk_buffered.tif',
+        road_motorways_link='results/individual_exclusions/roads_motorways_motorway_link_buffered.tif',
+        road_primary='results/individual_exclusions/roads_primary_primary_buffered.tif',
+        glacier='results/individual_exclusions/glacier_glacier_buffered.tif',
+        military='results/individual_exclusions/military_military_buffered.tif',
+        radar='results/individual_exclusions/radar_radar_buffered.tif',
+        hydrology='results/individual_exclusions/hydro_buffered.tif',
+        shipping_high='results/individual_exclusions/shipping_lanes_high_pass_shipping_lanes_high_pass_buffered.tif',
+        shipping_med='results/individual_exclusions/shipping_lanes_medium_pass_shipping_lanes_medium_pass_buffered.tif',
+    params:
+        desired_regions=desired_regions,
+        buffer_dict=buffer_dict,
+        hydrology_buffer=hydrology_buffer,
+    notebook:
+        "notebooks/build_technExcl.ipynb"
+
+rule build_slope:
+    input:
+        shapefile='resources/europe_onshore.geojson',
+        copernicus=demPath,
+    output:
+        reproj_DEM=temp('results/intermediate_files/Copernicus_DSM_90m_COG_EPSG3035.tif'),
+        temp_slope=temp('results/intermediate_files/slope_Copernicus_DSM_90m_COG_EPSG3035.tif'),
+        slope_max='results/individual_exclusions/onshore_slope_max_15.0deg.tif',
+    params:
+        maximum_slope=maximum_slope
+    notebook:
+        'notebooks/build_slope.ipynb'
+
+rule offshoreInfraExcl:
+    input:
+        euroshape=euroshape,
+        pipelinesPath=pipelinesPath,
+        fixed_platformsPath=fixed_platformsPath,
+        float_platformsPath=floating_platformsPath,
+    output:
+        bufferedPipes='results/individual_exclusions/buffered_pipelines.tif',
+        bufferedFloat='results/individual_exclusions/buffered_floating_structures.tif',
+        bufferedFixed='results/individual_exclusions/buffered_fixed_structures.tif',
+    params:
+        offshoreBuffer=offshore_buffer
+    notebook:
+        "notebooks/offshoreInfraExcl.ipynb"
+
+rule build_ports:
+    input:
+        luisaPath=luisaPath,
+    output:
+        luisaPort='results/individual_exlusions/luisa_ports_0m.tif',
+    notebook:
+        'notebooks/build_luisaPorts.ipynb'
+
+rule merge_techExclusions:
+    input:
+        bufferedPipes=rules.offshoreInfraExcl.output.bufferedPipes,
+        bufferedFloat=rules.offshoreInfraExcl.output.bufferedFloat,
+        bufferedFixed=rules.offshoreInfraExcl.output.bufferedFixed,
+        airports=rules.build_techExclusions.output.airportsTiff,
+        powerlines=rules.build_techExclusions.output.powerlines,
+        rail_narrow=rules.build_techExclusions.output.rail_narrow,
+        rail_rail=rules.build_techExclusions.output.rail_rail,
+        road_motorways_motor=rules.build_techExclusions.output.road_motorways_motor,
+        road_motorways_trunk=rules.build_techExclusions.output.road_motorways_trunk,
+        road_motorways_link=rules.build_techExclusions.output.road_motorways_link,
+        road_primary=rules.build_techExclusions.output.road_primary,
+        glacier=rules.build_techExclusions.output.glacier,
+        military=rules.build_techExclusions.output.military,
+        radar=rules.build_techExclusions.output.radar,
+        hydrology=rules.build_techExclusions.output.hydrology,
+        slope_max=rules.build_slope.output.slope_max,
+        shipping_high=rules.build_techExclusions.output.shipping_high,
+        shipping_med=rules.build_techExclusions.output.shipping_med,
+        luisaPort=rules.build_ports.output.luisaPort,
+    output:
+        techExcl='results/technical_exclusions.tif'
+    notebook:
+        'notebooks/merge_technExcl.ipynb'
+
