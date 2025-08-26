@@ -7,7 +7,7 @@ The Snakemake based workflow process highly detailed geospatial data, applies bu
 The workflow is customisable and can be modified to include additional/alternative data sources as well as different buffer distances. 
 
 <p align="center">
-    <img width="450" src="figures/technical_exclusions.png">
+    <img width="600" src="figures/technical_exclusions.png">
 </p>
 The figure above shows the resulting technical exclusions and how much land area is available for wind energy deployment (based on technical aspects only). 
 
