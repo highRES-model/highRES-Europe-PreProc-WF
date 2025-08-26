@@ -42,10 +42,21 @@ rule all:
     input:
         expand(config["target"]),
 
+rule build_shapes:
+    input:
+        euroshape=euroshape,
+    output:
+        onshoreshape="intermediate_data/shapes/europe_onshore.geojson",
+    params:
+        desired_regions=desired_regions,
+    notebook:
+        "notebooks/build_shapes.ipynb"
+
+
 rule build_techExclusions:
     input:
         euRiverPath=euRiverPath,
-        euroshape=euroshape,
+        euroshape=rules.build_shapes.output.onshoreshape,
         powerlinePath=powerlinePath,
         railPath=railPath,
         airportPath=airportPath,
@@ -80,7 +91,7 @@ rule build_techExclusions:
 
 rule build_slope:
     input:
-        shapefile='resources/europe_onshore.geojson',
+        shapefile=rules.build_shapes.output.onshoreshape,
         copernicus=demPath,
     output:
         reproj_DEM=temp('results/intermediate_files/Copernicus_DSM_90m_COG_EPSG3035.tif'),
@@ -93,7 +104,7 @@ rule build_slope:
 
 rule offshoreInfraExcl:
     input:
-        euroshape=euroshape,
+        euroshape=rules.build_shapes.output.onshoreshape,
         pipelinesPath=pipelinesPath,
         fixed_platformsPath=fixed_platformsPath,
         float_platformsPath=floating_platformsPath,
@@ -110,7 +121,7 @@ rule build_ports:
     input:
         luisaPath=luisaPath,
     output:
-        luisaPort='results/individual_exlusions/luisa_ports_0m.tif',
+        luisaPort='results/individual_exclusions/luisa_ports_0m.tif',
     notebook:
         'notebooks/build_luisaPorts.ipynb'
 
