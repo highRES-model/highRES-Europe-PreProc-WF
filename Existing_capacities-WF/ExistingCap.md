@@ -19,9 +19,9 @@ To create and run the workflow:
 3. Activate the snakemake environment `mamba activate highres_existing_capacities`
 4. Navigate to the repository in your snakemake conda environment shell
 5. Get the required input files (see subsections below)
-6. Run `snakemake`
+6. Run `snakemake --configfile config/config.yaml`
 
-The `Snakefile` file in `workflow/` contains all the options for running the workflow (year of estimation, input and output paths and filenames, etc.).
+The `config.yaml` file in `config/` contains all the options for running the workflow (year of estimation, input and output paths and filenames, etc.).
 
 
 ### Getting existing power plant in Europe
@@ -34,7 +34,7 @@ To gain access to the files, you will need to complete an online form with your 
 - [For solar power plants](https://globalenergymonitor.org/projects/global-wind-power-tracker/download-data/)
 - [For nuclear power plants](https://globalenergymonitor.org/projects/global-nuclear-power-tracker/download-data/)
 
-You will receive an Excel file (.xlsx) for each energy source. All these files should be in the `resources/GEM/` folder.
+You will receive an Excel file (.xlsx) for each energy source. You can provide the path to all these files in the config file (`config/config.yaml`).
 
 ### Getting shape files
 
@@ -47,12 +47,12 @@ spatials: ["nuts2"]
 ```
 The resulting shape files are located in `intermediate_data/nuts2/shapes/` of the highRES-Europe WF.
 
-Once the input processing step is complete, the path to the `europe_onshore.geojson` and `europe_offshore.geojson` files can be defined in the Snakamake file (`workflow/Snakefile`):
+Once the input processing step is complete, the path to the `europe_onshore.geojson` and `europe_offshore.geojson` files can be defined in the config file (`config/config.yaml`):
 
 ```
 # Shape files
-onshore_shapefile_path = "../../highRES-Europe-WF/intermediate_data/nuts2/shapes/europe_onshore.geojson"
-offshore_shapefile_path = "../../highRES-Europe-WF/intermediate_data/nuts2/shapes/europe_offshore.geojson"
+  onshore_shapefile_path: "resources/europe_onshore.geojson"
+  offshore_shapefile_path: "resources/europe_offshore.geojson"
 ```
 
 ### Getting techno-economic dataset
@@ -62,5 +62,5 @@ The techno-economic dataset required for this workflow can be downloaded from [h
 curl -L -b cookies.txt "https://zenodo.org/records/14223618/files/resources.zip?download=1" --output resources.zip
 ```
 
-The `highres_technoeconomic_dataset.ods` should be located in the `resources/` folder.
+You can provide the path to `highres_technoeconomic_dataset.ods` in config file (`config/config.yaml`).
 

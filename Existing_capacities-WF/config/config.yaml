@@ -1,0 +1,36 @@
+input_paths:
+  # GEM datasets
+  excel_solar: "resources/GEM/Global-Solar-Power-Tracker-February-2025.xlsx"
+  excel_wind: "resources/GEM/Global-Wind-Power-Tracker-February-2025.xlsx"
+  excel_nuclear: "resources/GEM/Global-Nuclear-Power-Tracker-July-2024.xlsx"
+  # Shape files
+  onshore_shapefile_path: "resources/europe_onshore.geojson"
+  offshore_shapefile_path: "resources/europe_offshore.geojson"
+  # Techno-economic file
+  ods_file: "resources/highres_technoeconomic_database.ods"
+
+output_names:
+  output_folder: "results"
+  # installed capacities in estimated year
+  gem_output_path: "gem_installed_capacities.csv"
+  # updated technoeconomic database
+  ods_output_file: "highres_technoeconomic_database_updated.ods"
+
+parameters:
+  # years for estimation
+  projected_years: [2050]
+
+  ## Plotting options
+  # Get plots of the existing power plants and capacities in Europe
+  plots: True
+  # Get a csv file for the sheets "gen_lim_z", "gen_exist_z", and "gen_exist_r"
+  csv_tech_ec: True
+  # file name for csv files
+  existing_pcap_r_path: "existing_pcap_r_{year}.csv"
+  existing_pcap_z_path: "existing_pcap_z_{year}.csv"
+  gen_lim_z_path: "gen_lim_z_{year}.csv"
+
+  ## Extra options
+  # Get time series for each technology: nuclear, onshore, offshore, solar
+  time_series: True
+  time_series_path: "installed_cap_2025-{year}_time_serie.csv"

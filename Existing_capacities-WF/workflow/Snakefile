@@ -1,46 +1,42 @@
 import pathlib
 cwd = pathlib.Path().resolve()
 
-# Paths to the inputs
+## Paths to the inputs
 
 # GEM datasets
-excel_solar = "Global-Solar-Power-Tracker-February-2025.xlsx"
-excel_wind = "Global-Wind-Power-Tracker-February-2025.xlsx"
-excel_nuclear = "Global-Nuclear-Power-Tracker-July-2024.xlsx"
+excel_solar = config["input_paths"]["excel_solar"]
+excel_wind = config["input_paths"]["excel_wind"]
+excel_nuclear = config["input_paths"]["excel_nuclear"]
 
 # Shape files
-onshore_shapefile_path = "../../highRES-Europe-WF/intermediate_data/nuts2/shapes/europe_onshore.geojson"
-offshore_shapefile_path = "../../highRES-Europe-WF/intermediate_data/nuts2/shapes/europe_offshore.geojson"
+onshore_shapefile_path = config["input_paths"]["onshore_shapefile_path"]
+offshore_shapefile_path = config["input_paths"]["offshore_shapefile_path"]
 
 # Techno-economic file
-ods_file = "highres_technoeconomic_database.ods"
+ods_file = config["input_paths"]["ods_file"]
 
 # years for estimation
-projected_years = [2050]
+projected_years = config["parameters"]["projected_years"]
 
+# Get plots of the existing power plants and capacities in Europe
+plots = config["parameters"]["plots"]
+# Get a csv file for the sheets "gen_lim_z", "gen_exist_z", and "gen_exist_r"
+csv_tech_ec = config["parameters"]["csv_tech_ec"]
+# paths for the csv files
+existing_pcap_r_path = config["parameters"]["existing_pcap_r_path"]
+existing_pcap_z_path = config["parameters"]["existing_pcap_z_path"]
+gen_lim_z_path = config["parameters"]["gen_lim_z_path"]
 
-## Outputs
-
-# GEM output file
-gem_output_path = "gem_installed_capacities.csv"
-ods_output_file = "highres_technoeconomic_database_updated.ods"
-
+## Output filenames
+gem_output_path = config["output_names"]["gem_output_path"]
+ods_output_file = config["output_names"]["ods_output_file"]
 
 ## Extra options
 # Get time series for each technology: nuclear, onshore, offshore, solar
-time_series = True
-time_series_path = "installed_cap_{year}-2050_time_serie.csv"
-# Get plots of the existing power plants and capacities in Europe
-plots = True
-# Get a csv file for the sheets "gen_lim_z", "gen_exist_z", and "gen_exist_r"
-csv_tech_ec = True
-# paths for the csv files
-existing_pcap_r_path = "existing_pcap_r_{year}.csv"
-existing_pcap_z_path = "existing_pcap_z_{year}.csv"
-gen_lim_z_path = "gen_lim_z_{year}.csv"
+time_series = config["parameters"]["time_series"]
+time_series_path = config["parameters"]["time_series_path"]
 
-
-workpath = cwd / pathlib.Path("results")
+workpath = cwd / pathlib.Path(config["output_names"]["output_folder"])
 resources_path = cwd / pathlib.Path("resources")
 gem_path = resources_path / pathlib.Path("GEM")
 
@@ -61,10 +57,10 @@ rule build_exist_cap:
     # "iso_code","lat","lon","capacity_MW",
     # "commissioning_year", "estimated_retirement_year"
     input:
-        excel_solar = gem_path / excel_solar,
-        excel_wind = gem_path / excel_wind,
-        excel_nuclear = gem_path / excel_nuclear,
-        onshore_shapefile = onshore_shapefile_path,
+        excel_solar = pathlib.Path(excel_solar),
+        excel_wind = pathlib.Path(excel_wind),
+        excel_nuclear = pathlib.Path(excel_nuclear),
+        onshore_shapefile = pathlib.Path(onshore_shapefile_path),
     output:
         existing_cap = workpath / "installed_capacities.csv",
     notebook:
@@ -73,9 +69,9 @@ rule build_exist_cap:
 rule build_highres_input:
     input:
         existing_cap = rules.build_exist_cap.output.existing_cap,
-        onshore_shapefile = onshore_shapefile_path,
-        offshore_shapefile = offshore_shapefile_path,
-        ods_file = resources_path / ods_file,
+        onshore_shapefile = pathlib.Path(onshore_shapefile_path),
+        offshore_shapefile = pathlib.Path(offshore_shapefile_path),
+        ods_file = pathlib.Path(ods_file),
     params:
         ods_output_file = workpath / ods_output_file,
     output:
@@ -106,12 +102,11 @@ rule build_highres_input:
 rule plotting_existing_cap:
     input:
         geodata_file = rules.build_highres_input.output.geodata_file,
-        onshore_shapefile = onshore_shapefile_path,
-    params:
-        plants_in_europe = workpath / "plants_in_europe.png",
-        pcap_in_eur_year = lambda wildcards: workpath / f"capacity_by_nuts2_{wildcards.year}.png",
+        onshore_shapefile = pathlib.Path(onshore_shapefile_path),
     output:
-        plot_status = temp(touch(workpath / "plots_{year}.finished"))
+        plants_in_europe = workpath / "plants_in_europe_{year}.png",
+        pcap_in_eur_year = workpath / "capacity_by_nuts2_{year}.png",
+        plot_status = temp(touch(workpath / "plots_{year}.finished")),
     notebook:
         "notebooks/exist_pcap_plot.ipynb"
 
