@@ -1,0 +1,158 @@
+import itertools
+
+import pandas as pd
+import pathlib
+
+individual_dimensions = True
+technical = True
+all_dimensions = False
+
+format_fig = "jpeg"
+dpi_fig = 100
+
+include_table = True
+
+dimensions_scenarios = {
+    "environmental": ["low", "medium", "high"],
+    "social": ["low", "medium", "high"],
+}
+
+data_path = "data_new"
+result_path = "results"
+
+input_dimensions = list(dimensions_scenarios.keys())
+# input_scenarios = {i : list(dimensions_scenarios[i].keys()) for i in dimensions_scenarios.keys()}
+
+full_scenarios_df = []
+for dimension in input_dimensions:
+    print(dimensions_scenarios[dimension])
+    combinations = list(itertools.product([dimension], dimensions_scenarios[dimension]))
+    full_scenarios_df.append(pd.DataFrame(combinations, columns=["dimension", "scenario"]))
+full_scenarios_df = pd.concat(full_scenarios_df)
+
+dimensions = full_scenarios_df.dimension
+scenarios = full_scenarios_df.scenario
+
+
+cwd = pathlib.Path().resolve()
+workpath = cwd / pathlib.Path(result_path)
+inputs = cwd / pathlib.Path(data_path)
+
+print(cwd)
+
+
+
+rule all:
+    input:
+        (
+            expand(workpath / "{dimension}_{scenario}_plot.finished", zip, dimension=dimensions, scenario=scenarios)
+            if individual_dimensions
+            else []
+        ),
+        (
+            workpath / "technical_exclusion.finished"
+            if technical
+            else []
+        ),
+        (
+            workpath / "all_dimensions.finished"
+            if all_dimensions
+            else []
+        ),
+
+rule plot_individual_dimensions:
+    input:
+        expand(inputs / "{dimension}_{scenario}.tif", dimension=dimension, scenario=dimensions_scenarios[dimension]),
+        europe_onshore_shapefile = inputs / "europe_onshore_country.geojson",
+        europe_offshore_shapefile = inputs / "europe_offshore_country.geojson",
+        # dimension_low = inputs / "{dimension}_low.tif",
+        # dimension_medium = inputs / "{dimension}_medium.tif",
+        # dimension_high = inputs / "{dimension}_high.tif",
+    output:
+        plot_path_onshore = (
+            (workpath / "onshore_{dimension}").with_suffix(f".{format_fig}")
+            if include_table
+            else (workpath / "onshore_{dimension}_no_table").with_suffix(f".{format_fig}")
+        ),
+        plot_path_offshore = (
+            (workpath / "offshore_{dimension}").with_suffix(f".{format_fig}")
+            if include_table
+            else (workpath / "offshore_{dimension}_no_table").with_suffix(f".{format_fig}")
+        ),
+    params:
+        include_table = include_table,
+        dpi_fig = dpi_fig,
+        format_fig = format_fig,
+        dimensions_scenarios = dimensions_scenarios,
+    resources:
+        mem_mb=50000, 
+    threads: workflow.cores * 0.4
+    script:
+        "scripts/plot_dimension.py"
+
+
+rule plot_technical:
+    input:
+        technical_exclusions = inputs / "technical_exclusions.tif",
+        europe_onshore_shapefile = inputs / "europe_onshore_country.geojson",
+        europe_offshore_shapefile = inputs / "europe_offshore_country.geojson",
+    output:
+        plot_path_onshore = (
+            (workpath / "technical_exclusions_onshore").with_suffix(f".{format_fig}")
+            if include_table
+            else (workpath / "technical_exclusions_onshore_no_table").with_suffix(f".{format_fig}")
+        ),
+        plot_path_offshore = (
+            (workpath / "technical_exclusions_offshore").with_suffix(f".{format_fig}")
+            if include_table
+            else (workpath / "technical_exclusions_offshore_no_table").with_suffix(f".{format_fig}")
+        ),
+    params:
+        include_table = include_table,
+        dpi_fig = dpi_fig,
+        format_fig = format_fig,
+    resources:
+        mem_mb=50000, 
+    threads: workflow.cores * 0.2
+    script:
+        "scripts/plot_technical.py"
+
+rule plot_all_dimensions:
+    input:
+        technical_exclusions = inputs / "technical_exclusions.tif",
+        europe_onshore_shapefile = inputs / "europe_onshore_country.geojson",
+        europe_offshore_shapefile = inputs / "europe_offshore_country.geojson",
+    output:
+        plot_path_onshore = (workpath / "all_dimensions_onshore").with_suffix(f".{format_fig}"),
+        plot_path_offshore = (workpath / "all_dimensions_offshore").with_suffix(f".{format_fig}"),
+    params:
+        dimensions_scenarios = dimensions_scenarios,
+        dpi_fig = dpi_fig,
+        format_fig = format_fig,
+        inputs_path = inputs,
+    resources:
+        mem_mb=50000,
+    threads: workflow.cores * 0.2
+    script:
+        "scripts/plot_all_dimensions.py"
+
+rule finish_dimension:
+    input:
+        rules.plot_individual_dimensions.output.plot_path_onshore,
+        rules.plot_individual_dimensions.output.plot_path_offshore,
+    output:
+        temp(touch(workpath / "{dimension}_{scenario}_plot.finished"))
+
+rule finish_technical:
+    input:
+        rules.plot_technical.output.plot_path_onshore,
+        rules.plot_technical.output.plot_path_offshore,
+    output:
+        temp(touch(workpath / "technical_exclusion.finished"))
+
+rule finish_all_dimension:
+    input:
+        rules.plot_all_dimensions.output.plot_path_onshore,
+        rules.plot_all_dimensions.output.plot_path_offshore,
+    output:
+        touch(workpath / "all_dimensions.finished")
