@@ -1,0 +1,242 @@
+import itertools
+
+import pandas as pd
+import pathlib
+
+
+method = config["params"]["method"]
+inputs = config["categories_to_buffer"]["inputs"]
+
+# boundaries
+rectx1 = config["params"]["rectx1"]
+rectx2 = config["params"]["rectx2"]
+recty1 = config["params"]["recty1"]
+recty2 = config["params"]["recty2"]
+
+# corine categories - settlements
+corine_codes = config["params"]["corine_codes"]
+
+# countries not excluded in scenicness rule
+country_no_excluded = config["params"]["excluded_country_scnicness"]
+
+# extra options for generating plots
+plots_all_cat = config["plot_params"]["plots_all_cat"]
+single_plot = config["plot_params"]["single_plot"]
+plot_dimensions = config["plot_params"]["plot_dimensions"]
+
+# target EPSG
+target_crs = "EPSG:3035"
+
+# countries for coastline rule
+aggregated_regions = [
+    "AT", "BE", "BG", "CH", "CZ",
+    "DE", "DK", "EE", "ES", "FI",
+    "FR", "UK", "GR", "HR", "HU",
+    "IE", "IT", "LT", "LU", "LV",
+    "NL", "NO", "PL", "PT", "RO",
+    "SE", "SI", "SK",
+]
+
+# Generate all combinations of categories and buffers
+input_scenarios = {i : list(inputs[i].keys()) for i in inputs.keys()}
+input_categories = list(input_scenarios.keys())
+scenarios_df = []
+
+for category in input_categories:
+    combinations = list(itertools.product([category], input_scenarios[category]))
+    scenarios_df.append(pd.DataFrame(combinations, columns=["category", "scenario"]))
+scenarios_df = pd.concat(scenarios_df)
+
+categories = scenarios_df.category
+scenarios = scenarios_df.scenario
+
+cwd = pathlib.Path().resolve()
+workpath = cwd / pathlib.Path(config["params"]["working_path"])
+input_path = cwd / pathlib.Path(config["params"]["input_path"])
+
+
+rule all:
+    input:
+        expand(workpath / "{category}_{scenario}.finished", zip, category=categories, scenario=scenarios)
+
+def category_run(wildcards):
+    returndict = {}
+    if wildcards.category == "Settlement":
+        return rules.build_settlement_buffers.output.settlement_path
+    if wildcards.category == "Noise":
+        return rules.build_noise_buffers.output.noise_path
+    if wildcards.category == "ShadowFlicker":
+        return rules.build_shadow_flicker_buffers.output.shadow_flicker_path
+    if wildcards.category == "LandscapeVisualImpact":
+        return rules.build_landscape_visual_impact_buffers.output.landscape_visual_impact_path
+    if wildcards.category == "Coastline":
+        return rules.build_coastline_buffers.output.coastline_path
+
+rule build_settlement_buffers:
+    input:
+        corine = input_path / "corine.tif",
+        europe_onshore_shapefile = input_path / "europe_onshore_country.geojson",
+    output:
+        settlement_path = workpath / "rasters" / "Settlement_{scenario}.tif"
+    params:
+        method = method,
+        target_crs = target_crs,
+        input_scenarios = inputs,
+        corine_codes = corine_codes,
+        polygon_borders = [rectx1, rectx2, recty1, recty2],
+    notebook:
+        "notebooks/build_settlement_buffer.ipynb"
+
+rule build_noise_buffers:
+    input:
+        corine = input_path / "corine.tif",
+        europe_onshore_shapefile = input_path / "europe_onshore_country.geojson",
+    output:
+        noise_path = workpath / "rasters" / "Noise_{scenario}.tif"
+    params:
+        method = method,
+        target_crs = target_crs,
+        input_scenarios = inputs,
+        corine_codes = corine_codes,
+        polygon_borders = [rectx1, rectx2, recty1, recty2],
+    notebook:
+        "notebooks/build_noise_buffer.ipynb"
+
+rule build_shadow_flicker_buffers:
+    input:
+        corine = input_path / "corine.tif",
+        europe_onshore_shapefile = input_path / "europe_onshore_country.geojson",
+    output:
+        shadow_flicker_path = workpath / "rasters" / "ShadowFlicker_{scenario}.tif"
+    params:
+        method = method,
+        target_crs = target_crs,
+        input_scenarios = inputs,
+        corine_codes = corine_codes,
+        polygon_borders = [rectx1, rectx2, recty1, recty2],
+    notebook:
+        "notebooks/build_shadow_flicker_buffer.ipynb"
+
+rule build_landscape_visual_impact_buffers:
+    input:
+        scenario_path = input_path / "Landscape_scenicness_eu_ternary.tif",
+        europe_onshore_shapefile =  input_path / "europe_onshore_country.geojson",
+    output:
+        landscape_visual_impact_path = workpath / "rasters" / "LandscapeVisualImpact_{scenario}.tif"
+    params:
+        method = method,
+        target_crs = target_crs,
+        input_scenarios = inputs,
+        polygon_borders = [rectx1, rectx2, recty1, recty2],
+        country_no_excluded=country_no_excluded,
+    notebook:
+        "notebooks/build_landscape_visual_impact_buffer.ipynb"
+
+rule build_coastline_buffers:
+    input:
+        europe_shapefile = "data/NUTS_RG_01M_2021_4326.geojson"
+    params:
+        method = method,
+        input_scenarios = inputs,
+        target_crs = target_crs,
+        polygon_borders = [rectx1, rectx2, recty1, recty2],
+        aggregated_regions = aggregated_regions,
+    output:
+        coastline_path = workpath / "rasters" / "Coastline_{scenario}.tif",
+    notebook:
+        "notebooks/build_coastline_buffer.ipynb"
+
+rule single_plot_buffer:
+    input:
+        raster_file = workpath / "rasters" / "{category}_level_{scenario}.tif"
+    output:
+        plot_path = workpath / "plots" / "{category}_level_{scenario}.png"
+    params:
+        europe_onshore_shapefile = "data/europe_onshore_country.geojson",
+        europe_offshore_shapefile = "data/europe_offshore_country.geojson",
+    resources:
+        mem_mb=50000,
+    threads: workflow.cores*0.2
+    script:
+        "scripts/single_plot.py"
+
+
+rule all_plots:
+    input:
+        expand(workpath / "rasters" / "{category}_{scenario}.tif", zip, category=categories, scenario=scenarios),
+        europe_onshore_shapefile = "data/europe_onshore_country.geojson",
+        europe_offshore_shapefile = "data/europe_offshore_country.geojson",
+    output:
+        plot_path = workpath / "plots" / "by_category.png",
+    params:
+        input_scenarios = inputs,
+        workpath = workpath,
+    resources:
+        mem_mb=50000,
+    threads: workflow.cores * 0.4
+    script:
+        "scripts/plot_all_categories.py"
+
+rule merge_rasters:
+    input:
+        settlement_path = workpath / "rasters" / "Settlement_{scenario}.tif",
+        noise_path = workpath / "rasters" / "Noise_{scenario}.tif",
+        shadow_flicker_path = workpath / "rasters" / "ShadowFlicker_{scenario}.tif",
+        coastline_path = workpath / "rasters" / "Coastline_{scenario}.tif",
+        landscape_visual_impact_path = workpath / "rasters" / "LandscapeVisualImpact_{scenario}.tif",
+
+    output:
+        output_path = workpath / "dimension" / "social_{scenario}.tif",
+    params:
+        method = method,
+        target_crs = target_crs,
+        polygon_borders = [rectx1, rectx2, recty1, recty2],
+        
+    notebook:
+        "notebooks/build_merged_raster.ipynb"
+
+rule plot_dimension:
+    input:
+        input_path_low = workpath / "dimension" / "social_low.tif",
+        input_path_medium = workpath / "dimension" / "social_medium.tif",
+        input_path_high = workpath / "dimension" / "social_high.tif",
+    output:
+        plot_path_onshore = workpath / "plots" / "social_onshore.png",
+        plot_path_offshore = workpath / "plots" / "social_offshore.png",
+    params:
+        europe_onshore_shapefile = "data/europe_onshore_country.geojson",
+        europe_offshore_shapefile = "data/europe_offshore_country.geojson",
+    resources:
+        mem_mb=50000,
+    threads: workflow.cores * 0.4
+    script:
+        "scripts/plot_dimension.py"
+
+
+rule finish:
+    input:
+        category_run,
+        (
+            rules.all_plots.output.plot_path
+            if plots_all_cat
+            else []
+        ),
+        (
+            rules.single_plot_buffer.output.plot_path
+            if single_plot
+            else []
+        ),
+        (
+            rules.plot_dimension.output.plot_path_onshore
+            if plot_dimensions
+            else []
+        ),
+        (
+            rules.plot_dimension.output.plot_path_offshore
+            if plot_dimensions
+            else []
+        ),
+        rules.merge_rasters.output.output_path,
+    output:
+        temp(touch(workpath / "{category}_{scenario}.finished"))
+        
