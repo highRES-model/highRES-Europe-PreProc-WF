@@ -3,25 +3,19 @@ import itertools
 import pandas as pd
 import pathlib
 
-individual_dimensions = True
-technical = True
-all_dimensions = False
+individual_dimensions = config["parameters"]["individual_dimensions"]
+technical = config["parameters"]["technical"]
+all_dimensions = config["parameters"]["all_dimensions"]
+format_fig = config["parameters"]["format_fig"]
+dpi_fig = config["parameters"]["dpi_fig"]
+include_table = config["parameters"]["include_table"]
 
-format_fig = "jpeg"
-dpi_fig = 100
+dimensions_scenarios = config["input_scenarios"]["dimensions_scenarios"]
 
-include_table = True
-
-dimensions_scenarios = {
-    "environmental": ["low", "medium", "high"],
-    "social": ["low", "medium", "high"],
-}
-
-data_path = "data_new"
-result_path = "results"
+data_path = config["paths"]["data_path"]
+result_path = config["paths"]["result_path"]
 
 input_dimensions = list(dimensions_scenarios.keys())
-# input_scenarios = {i : list(dimensions_scenarios[i].keys()) for i in dimensions_scenarios.keys()}
 
 full_scenarios_df = []
 for dimension in input_dimensions:
@@ -45,7 +39,7 @@ print(cwd)
 rule all:
     input:
         (
-            expand(workpath / "{dimension}_{scenario}_plot.finished", zip, dimension=dimensions, scenario=scenarios)
+            expand(workpath / "{dimension}_scenarios_plot.finished", zip, dimension=dimensions)
             if individual_dimensions
             else []
         ),
@@ -65,9 +59,6 @@ rule plot_individual_dimensions:
         expand(inputs / "{dimension}_{scenario}.tif", dimension=dimension, scenario=dimensions_scenarios[dimension]),
         europe_onshore_shapefile = inputs / "europe_onshore_country.geojson",
         europe_offshore_shapefile = inputs / "europe_offshore_country.geojson",
-        # dimension_low = inputs / "{dimension}_low.tif",
-        # dimension_medium = inputs / "{dimension}_medium.tif",
-        # dimension_high = inputs / "{dimension}_high.tif",
     output:
         plot_path_onshore = (
             (workpath / "onshore_{dimension}").with_suffix(f".{format_fig}")
@@ -141,7 +132,7 @@ rule finish_dimension:
         rules.plot_individual_dimensions.output.plot_path_onshore,
         rules.plot_individual_dimensions.output.plot_path_offshore,
     output:
-        temp(touch(workpath / "{dimension}_{scenario}_plot.finished"))
+        temp(touch(workpath / "{dimension}_scenarios_plot.finished"))
 
 rule finish_technical:
     input:
@@ -155,4 +146,4 @@ rule finish_all_dimension:
         rules.plot_all_dimensions.output.plot_path_onshore,
         rules.plot_all_dimensions.output.plot_path_offshore,
     output:
-        touch(workpath / "all_dimensions.finished")
+        temp(touch(workpath / "all_dimensions.finished"))

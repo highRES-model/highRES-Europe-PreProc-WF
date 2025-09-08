@@ -1,0 +1,27 @@
+
+
+input_scenarios:
+  dimensions_scenarios: {
+      "environmental": ["low", "medium", "high"],
+      "social": ["low", "medium", "high"],
+  }
+
+parameters:
+  # plot scenarios for each dimension
+  individual_dimensions: True
+  # plot technical dimension
+  technical: True
+  # plot all the scenarios and dimensions
+  all_dimensions: False
+
+  # format and dpi for plots
+  format_fig: "jpeg" # jpeg png
+  dpi_fig: 100
+  # include table next to the plots
+  include_table: True
+
+paths:
+  # input path
+  data_path: "data_new"
+  # output path
+  result_path: "results"

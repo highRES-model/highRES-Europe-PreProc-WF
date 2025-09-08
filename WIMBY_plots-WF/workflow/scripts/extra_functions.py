@@ -3,6 +3,12 @@ import pandas as pd
 import geopandas as gpd
 from matplotlib.colors import ListedColormap, BoundaryNorm
 
+import io
+import matplotlib
+# IMPORTANT: Use a non-interactive backend for parallel processes
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 cmap = ListedColormap(['white', 'green'])
 # normalize the color map. 
 # Values between -0.5 and 0.5 -> White
@@ -57,7 +63,7 @@ def plot_eligible_area(ax1, ax2, tiff_path, europe, add_title, target_crs):
     perc_index = text1_perc.rfind(" ") #before the value, there is a space
     text1 = text1_perc[:perc_index+1]
     perc = round(float(text1_perc[perc_index+1:]),1)
-    title = text1+str(perc)+"%"+text2
+    new_title = f"{text1}{perc}%{text2}"
 
     new_title = add_title + title
     ax1.set_title(new_title, fontsize=14, weight="bold")
@@ -118,7 +124,7 @@ def plot_eligible_area_no_table(ax, tiff_path, europe, add_title, target_crs):
     perc_index = text1_perc.rfind(" ") #before the value, there is a space
     text1 = text1_perc[:perc_index+1]
     perc = round(float(text1_perc[perc_index+1:]),1)
-    title = text1+str(perc)+"%"+text2
+    new_title = f"{text1}{perc}%{text2}"
 
     new_title = add_title + title
     ax.set_title(new_title, fontsize=14, weight="bold")
@@ -156,11 +162,71 @@ def plot_eligible_area_all_dim(ax, tiff_paths, europe, add_title, target_crs):
     perc_index = text1_perc.rfind(" ") #before the value, there is a space
     text1 = text1_perc[:perc_index+1]
     perc = round(float(text1_perc[perc_index+1:]),1)
-    title = text1+str(perc)+"%"+text2
+    new_title = f"{text1}{perc}%{text2}"
 
-    new_title = add_title + title
-    ax.set_title(new_title, fontsize=14, weight="bold")
+    ax.set_title(f"{add_title}{new_title}", fontsize=14, weight="bold")
 
     ax.set_xticks([])  # Remove x-axis ticks
     ax.set_yticks([])  # Remove y-axis ticks
     # ax.axis("off")
+
+
+def subplot_parallel(args):
+    tiff_paths = args["tiff_paths"]
+    europe = args["europe"]
+    onshore = args["onshore"]
+    technical = args["technical"]
+    add_title = args["add_title"]
+    target_crs = args["target_crs"]
+    dpi_fig = args["dpi_fig"]
+    type_plot = args["type_plot"]
+    
+    if type_plot=="all_dim":
+        # Create a temporary figure
+        fig, ax = plt.subplots(figsize=(4, 5), dpi=dpi_fig)
+        plot_eligible_area_all_dim(
+            ax, tiff_paths, europe, add_title, target_crs
+        )
+    elif type_plot=="dim_table":
+        ## map - map - map / table - table - table
+        # Create a temporary figure
+        if technical:
+            ncol = 2
+            nrow = 1
+            wspace = 0.04
+        else:
+            ncol = 1
+            nrow = 2
+            wspace = None
+        w_figsize = ncol*6
+        h_figsize = nrow*9
+
+        if onshore:
+            hspace = 0.02
+        else:
+            hspace = -0.12
+        fig, ax = plt.subplots(nrow,ncol,figsize=(w_figsize, h_figsize), dpi=dpi_fig)
+        plot_eligible_area(
+            ax[0],ax[1], tiff_paths, europe, add_title, target_crs
+        )
+        fig.subplots_adjust(hspace=hspace, wspace=wspace)
+
+    elif type_plot=="dim_no_table":
+        ## map - map - map
+        # Create a temporary figure
+        fig, ax = plt.subplots(figsize=(7, 9), dpi=dpi_fig)
+        plot_eligible_area_no_table(
+            ax, tiff_paths, europe, add_title, target_crs
+        )
+    
+    # Render the figure
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches='tight')
+    buf.seek(0)
+    # Read the buffer into a NumPy array
+    image_array = plt.imread(buf)
+    
+    # Close the figure
+    plt.close(fig)
+    
+    return {'image': image_array}

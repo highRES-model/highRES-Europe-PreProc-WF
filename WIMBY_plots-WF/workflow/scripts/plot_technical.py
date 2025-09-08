@@ -2,7 +2,8 @@ import geopandas as gpd
 import time
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-from scripts.extra_functions import plot_eligible_area, plot_eligible_area_no_table
+import concurrent.futures
+from scripts.extra_functions import subplot_parallel
 
 
 # input data
@@ -39,39 +40,62 @@ europe_offshore = (
 t=time.time()
 
 if include_table:
-    fig = plt.figure(figsize=(16,7))
-    gs = gridspec.GridSpec(1, 2, figure=fig, wspace=-0.08)
-    ax1 = fig.add_subplot(gs[0,0])
-    ax2 = fig.add_subplot(gs[0,1])
-
-    plot_eligible_area(ax1, ax2, raster_file, europe_onshore, "Technical exclusion \n", target_crs)
-    plt.savefig(snakemake.output.plot_path_onshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")
-    print(f"Technical Excl plot - onshore - {time.time()-t}")
-
-    fig = plt.figure(figsize=(15,7))
-    gs = gridspec.GridSpec(1, 2, figure=fig, wspace=-0.08)
-    ax1 = fig.add_subplot(gs[0,0])
-    ax2 = fig.add_subplot(gs[0,1])
-
-    plot_eligible_area(ax1, ax2, raster_file, europe_offshore, "Technical exclusion \n", target_crs)
-
-    plt.savefig(snakemake.output.plot_path_offshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")
-    print(f"Technical Excl plot - offshore - {time.time()-t}")
-
+    fig_onshore = plt.figure(figsize=(12,9))
+    fig_offshore = plt.figure(figsize=(12,9))
+    type_plot = "dim_table"
 else:
-    fig = plt.figure(figsize=(7,7))
-    gs = gridspec.GridSpec(1, 1, figure=fig)
-    ax1 = fig.add_subplot(gs[0,0])
+    fig_onshore = plt.figure(figsize=(7,7))
+    fig_offshore = plt.figure(figsize=(7,7))
+    type_plot = "dim_no_table"
 
-    plot_eligible_area_no_table(ax1, raster_file, europe_onshore, "Technical exclusion \n", target_crs)
-    plt.savefig(snakemake.output.plot_path_onshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")
-    print(f"Technical Excl plot - onshore - {time.time()-t}")
 
-    fig = plt.figure(figsize=(7,7))
-    gs = gridspec.GridSpec(1, 1, figure=fig)
-    ax1 = fig.add_subplot(gs[0,0])
+jobs_onshore = []
+jobs_offshore = []
 
-    plot_eligible_area_no_table(ax1, raster_file, europe_offshore, "Technical exclusion \n", target_crs)
+job_args = {
+    "tiff_paths": raster_file,
+    "target_crs": target_crs,
+    "add_title": "Technical exclusion\n",
+    "technical": 1,
+    "dpi_fig": dpi_fig,
+    "format_fig": format_fig,
+    "type_plot":type_plot,
+}
 
-    plt.savefig(snakemake.output.plot_path_offshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")
-    print(f"Technical Excl plot - offshore - {time.time()-t}")
+job_args_onshore = job_args.copy()
+job_args_onshore["europe"] = europe_onshore
+job_args_onshore["onshore"] = True
+jobs_onshore.append(job_args_onshore)
+
+job_args_offshore = job_args.copy()
+job_args_offshore["europe"] = europe_offshore
+job_args_offshore["onshore"] = False
+jobs_offshore.append(job_args_offshore)
+
+with concurrent.futures.ProcessPoolExecutor() as executor:
+    results_onshore = list(executor.map(subplot_parallel, jobs_onshore))
+    results_offshore = list(executor.map(subplot_parallel, jobs_offshore))
+print(f"Technical Excl plot - onshore - {time.time()-t}")
+print(f"Technical Excl plot - offshore - {time.time()-t}")
+
+gs_onshore = gridspec.GridSpec(1, 1, figure=fig_onshore)
+gs_offshore = gridspec.GridSpec(1, 1, figure=fig_offshore)
+
+# onshore
+ax_onshore = fig_onshore.add_subplot(gs_onshore[0,0])
+result_onshore = results_onshore[0]
+ax_onshore.imshow(result_onshore["image"])
+ax_onshore.set_xticks([])  # Remove x-axis ticks
+ax_onshore.set_yticks([])  # Remove y-axis ticks
+ax_onshore.axis("off")
+
+# offshore
+ax_offshore = fig_offshore.add_subplot(gs_offshore[0,0])
+result_offshore = results_offshore[0]
+ax_offshore.imshow(result_offshore["image"])
+ax_offshore.set_xticks([])  # Remove x-axis ticks
+ax_offshore.set_yticks([])  # Remove y-axis ticks
+ax_offshore.axis("off")
+
+fig_onshore.savefig(snakemake.output.plot_path_onshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")
+fig_offshore.savefig(snakemake.output.plot_path_offshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")

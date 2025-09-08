@@ -3,7 +3,8 @@ import time
 import matplotlib.pyplot as plt
 import pandas as pd
 import matplotlib.gridspec as gridspec
-from scripts.extra_functions import plot_eligible_area, plot_eligible_area_no_table
+import concurrent.futures
+from scripts.extra_functions import subplot_parallel
 
     
 # input data
@@ -32,8 +33,6 @@ dimension = dimension[0].upper() + dimension[1:]
 target_crs = "EPSG:3035"
 # target_crs = "EPSG:4326"
 
-
-
 ## onshore
 europe_onshore = (
     gpd
@@ -54,57 +53,64 @@ europe_offshore = (
 t=time.time()
 
 if include_table:
-    fig_onshore = plt.figure(figsize=(9*len(raster_paths),19))
-    fig_offshore = plt.figure(figsize=(9*len(raster_paths),15))
-    ## map - map - map / table - table - table
-    gs_onshore = gridspec.GridSpec(2, len(raster_paths), figure=fig_onshore, wspace=0.05, hspace=0.03)
-    gs_offshore = gridspec.GridSpec(2, len(raster_paths), figure=fig_offshore, wspace=0.05, hspace=0.03)
-
-    col = 0
-    for raster_file in raster_paths:
-        level = (raster_file.split("_",-1)[-1]).split(".")[0]
-
-        # onshore
-        ax1 = fig_onshore.add_subplot(gs_onshore[0,col])
-        ax2 = fig_onshore.add_subplot(gs_onshore[1,col])
-        plot_eligible_area(ax1, ax2, raster_file, europe_onshore, f"{dimension}: {level}\n", target_crs)
-        print(f"{dimension} plot - onshore {level} - {time.time()-t}")
-
-        # offshore
-        ax1 = fig_offshore.add_subplot(gs_offshore[0,col])
-        ax2 = fig_offshore.add_subplot(gs_offshore[1,col])
-        plot_eligible_area(ax1, ax2, raster_file, europe_offshore, f"{dimension}: {level}\n", target_crs)
-        print(f"{dimension} plot - offshore {level} - {time.time()-t}")
-
-        col += 1
-    fig_onshore.savefig(snakemake.output.plot_path_onshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")
-    fig_offshore.savefig(snakemake.output.plot_path_offshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")
-
-    print(f"plotting {time.time()-t}")
+    fig_onshore = plt.figure(figsize=(6*len(raster_paths),18))
+    fig_offshore = plt.figure(figsize=(6*len(raster_paths),18))
+    type_plot = "dim_table"
 else:
     fig_onshore = plt.figure(figsize=(7*len(raster_paths),9))
     fig_offshore = plt.figure(figsize=(7*len(raster_paths),9))
-    ## map - map - map
-    gs_onshore = gridspec.GridSpec(1, len(raster_paths), figure=fig_onshore, wspace=0.05)
-    gs_offshore = gridspec.GridSpec(1, len(raster_paths), figure=fig_offshore, wspace=0.05)
-    
-    col = 0
-    for raster_file in raster_paths:
-        level = (raster_file.split("_",-1)[-1]).split(".")[0]
-
-        # onshore
-        ax = fig_onshore.add_subplot(gs_onshore[0,col])
-        plot_eligible_area_no_table(ax, raster_file, europe_onshore, f"{dimension}: {level}\n", target_crs)
-        print(f"{dimension} plot - onshore {level} - {time.time()-t}")
-        # offshore
-        ax = fig_offshore.add_subplot(gs_offshore[0,col])
-        plot_eligible_area_no_table(ax, raster_file, europe_offshore, f"{dimension}: {level}\n", target_crs)
-        print(f"{dimension} plot - offshore {level} - {time.time()-t}")
-
-        col += 1
-
-    fig_onshore.savefig(snakemake.output.plot_path_onshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")
-    fig_offshore.savefig(snakemake.output.plot_path_offshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")
+    type_plot = "dim_no_table"
 
 
-    
+jobs_onshore = []
+jobs_offshore = []
+for raster_file in raster_paths:
+    level = (raster_file.split("_",-1)[-1]).split(".")[0]
+    job_args = {
+        "tiff_paths": raster_file,
+        "target_crs": target_crs,
+        "technical": 0,
+        "add_title": f"{dimension}: {level}\n",
+        "dpi_fig": dpi_fig,
+        "format_fig": format_fig,
+        "type_plot":type_plot,
+    }
+
+    job_args_onshore = job_args.copy()
+    job_args_onshore["europe"] = europe_onshore
+    job_args_onshore["onshore"] = True
+    jobs_onshore.append(job_args_onshore)
+
+    job_args_offshore = job_args.copy()
+    job_args_offshore["europe"] = europe_offshore
+    job_args_offshore["onshore"] = False
+    jobs_offshore.append(job_args_offshore)
+
+with concurrent.futures.ProcessPoolExecutor() as executor:
+    results_onshore = list(executor.map(subplot_parallel, jobs_onshore))
+    results_offshore = list(executor.map(subplot_parallel, jobs_offshore))
+print(f"{dimension} plot - onshore - {time.time()-t}")
+print(f"{dimension} plot - offshore - {time.time()-t}")
+
+gs_onshore = gridspec.GridSpec(1, len(raster_paths), figure=fig_onshore, wspace=0.05)
+gs_offshore = gridspec.GridSpec(1, len(raster_paths), figure=fig_offshore, wspace=0.05)
+for result_index, raster_file in enumerate(raster_paths):
+    # onshore
+    ax_onshore = fig_onshore.add_subplot(gs_onshore[0,result_index])
+    result_onshore = results_onshore[result_index]
+    ax_onshore.imshow(result_onshore["image"])
+    ax_onshore.set_xticks([])  # Remove x-axis ticks
+    ax_onshore.set_yticks([])  # Remove y-axis ticks
+    ax_onshore.axis("off")
+
+    # offshore
+    ax_offshore = fig_offshore.add_subplot(gs_offshore[0,result_index])
+    result_offshore = results_offshore[result_index]
+    ax_offshore.imshow(result_offshore["image"])
+    ax_offshore.set_xticks([])  # Remove x-axis ticks
+    ax_offshore.set_yticks([])  # Remove y-axis ticks
+    ax_offshore.axis("off")
+
+fig_onshore.savefig(snakemake.output.plot_path_onshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")
+fig_offshore.savefig(snakemake.output.plot_path_offshore, dpi=dpi_fig, format=format_fig, bbox_inches="tight")
+
