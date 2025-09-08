@@ -1,0 +1,60 @@
+
+categories_to_buffer:
+  inputs: {
+      "Settlement": {
+        "high": 3000,
+          "medium": "data/buffer_country.csv",
+        "low": 200,
+      },
+      "Noise": {
+        "high": 2000,
+          "medium": 500,
+        "low": 400,
+      },
+      "ShadowFlicker": {
+        "high": 2500,
+          "medium": 1250,
+        "low": 84,
+      },
+      "LandscapeVisualImpact": {
+        "high": [2,1],
+          "medium": [2],
+        "low": [],
+      },
+      "Coastline": {
+        "high": 12,
+          "medium": 12,
+        "low": 6,
+      },
+  }
+
+
+params:
+  method: "manual"
+  # method: "atlite"
+  # method: "test"
+
+  excluded_country_scnicness: {
+      "high": [],
+      "medium": [],
+      "low": [],
+  }
+
+  # considered codes in corine
+  corine_codes: [1, 2, 3, 9, 10, 11]
+
+  # boundaries
+  rectx1: -12
+  rectx2: 44
+  recty1: 33
+  recty2: 72
+
+  # input path
+  input_path: "data"
+  # working path
+  working_path: "results"
+
+plot_params:
+  plots_all_cat: False
+  single_plot: False
+  plot_dimensions: False
