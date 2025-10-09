@@ -3,27 +3,28 @@ categories_to_buffer:
   inputs: {
       "Settlement": {
         "high": 3000,
-          "medium": "data/buffer_country.csv",
+        "medium": "data/buffer_country.csv",
         "low": 200,
       },
       "Noise": {
         "high": 2000,
-          "medium": 500,
-        "low": 400,
+        "medium": 500,
+        "low": 200, # previous 400
       },
       "ShadowFlicker": {
         "high": 2500,
-          "medium": 1250,
+        "medium": 1250,
         "low": 84,
       },
       "LandscapeVisualImpact": {
         "high": [2,1],
-          "medium": [2],
+        # "medium": [2],
+        "medium": "data/scenicness_medium_exclusions.csv",
         "low": [],
       },
       "Coastline": {
         "high": 12,
-          "medium": 12,
+        "medium": 12,
         "low": 6,
       },
   }
@@ -31,7 +32,7 @@ categories_to_buffer:
 
 params:
   method: "manual"
-  # method: "atlite"
+  # method: "atlite" # presenting some bugs
   # method: "test"
 
   excluded_country_scnicness: {
