@@ -1,0 +1,72 @@
+target: "results/environmental_exclusions_{environmental}.tif"
+
+paths:
+  euRiver : "/home/oskar/Downloads/EU_hydro_gpkg_eu/"
+  euroshape : "/home/oskar/shared_input/geodata/onshore/shapes/NUTS_RG_01M_2021_4326.geojson"
+  powerlines : '/home/oskar/shared_input/geodata/onshore/wimby/powerlines.gpkg'
+  rail : '/home/oskar/shared_input/geodata/onshore/wimby/rail.gpkg'
+  airports : '/home/oskar/shared_input/geodata/onshore/wimby/airport.gpkg'
+  glaciers : '/home/oskar/shared_input/geodata/onshore/wimby/glacier.gpkg'
+  roads_motorways : '/home/oskar/shared_input/geodata/onshore/wimby/roads_motorways.gpkg'
+  roads_primary : '/home/oskar/shared_input/geodata/onshore/wimby/roads_primary.gpkg'
+  military : '/home/oskar/shared_input/geodata/onshore/wimby/military.gpkg'
+  radar : '/home/oskar/shared_input/geodata/onshore/wimby/radar.gpkg'
+  shipping_high : '/home/oskar/shared_input/geodata/onshore/wimby/shipping_lanes_high_pass.gpkg'
+  shipping_med : '/home/oskar/shared_input/geodata/onshore/wimby/shipping_lanes_medium_pass.gpkg'
+  fixed_platforms : '/home/oskar/shared_input/Data_283897180/Fixed_Platforms_230321_NorthSeaonly.shp'
+  float_platforms : '/home/oskar/shared_input/Data_283897180/Floating_Platforms_230321_NorthSeaonly.shp'
+  pipelines: '/home/oskar/shared_input/Data_283897180/Pipelines_230321_NorthSeaonly.shp'
+  copernicus_DEM: '/home/oskar/shared_input/geodata/onshore/Copernicus_DSM_90m_COG.tif'
+  luisa: '/home/oskar/shared_input/geodata/onshore/wimby/LUISA_basemap_020321_100m.tif'
+
+parameters:
+  buffer_distances : {
+    'shipping_lanes_high_pass.gpkg': [
+        {'layer_name': 'shipping_lanes_high_pass', 'buffer_distance': 0},
+    ],
+    'shipping_lanes_medium_pass.gpkg': [
+        {'layer_name': 'shipping_lanes_medium_pass', 'buffer_distance': 0},
+    ],
+    'radar.gpkg': [
+        {'layer_name': 'radar', 'buffer_distance': 7000},
+    ],
+    'military.gpkg': [
+        {'layer_name': 'military', 'buffer_distance': 5000},
+    ],
+    'rail.gpkg': [
+        {'layer_name': 'rail', 'buffer_distance': 175},
+        {'layer_name': 'narrow', 'buffer_distance': 175}
+    ],
+    'airport.gpkg': [
+        {'layer_name': 'airports', 'buffer_distance': 6000}
+    ],
+    'powerlines.gpkg': [
+        {'layer_name': 'powerlines', 'buffer_distance': 175}
+    ],
+    'glacier.gpkg': [
+        {'layer_name': 'glacier', 'buffer_distance': 0}
+    ],
+    'roads_motorways.gpkg': [
+        {'layer_name': 'motorway', 'buffer_distance': 175},
+        {'layer_name': 'motorway_link', 'buffer_distance': 175},
+        {'layer_name': 'trunk', 'buffer_distance': 175}
+    ],
+    'roads_primary.gpkg': [
+        {'layer_name': 'primary', 'buffer_distance': 175}
+    ],
+  }
+
+  hydrology_buffer : 175
+  offshore_buffer : {
+    'pipelines' : 150,
+    'fixed_platforms' : 2000,
+    'float_platforms' : 2000,
+    }
+  maximum_slope : 15
+
+  desired_regions : [
+    "AT", "BE", "BG", "CH", "CZ", "DE",
+    "DK", "EE", "ES", "FI", "FR", "UK",
+    "GR", "HR", "HU", "IE", "IT", "LT",
+    "LU", "LV", "NL", "NO", "PL", "PT", 
+    "RO", "SE", "SI", "SK",]
