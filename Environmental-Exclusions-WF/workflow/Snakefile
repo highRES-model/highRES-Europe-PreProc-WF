@@ -5,42 +5,29 @@ import pathlib
 
 # Load parameters, paths and wildcards from config
 
-euRiverPath = config["paths"]["euRiver"]
 euroshape = config["paths"]["euroshape"]
-powerlinePath = config["paths"]["powerlines"]
-railPath = config["paths"]["rail"]
-airportPath = config["paths"]["airports"]
-glacierPath = config["paths"]["glaciers"]
-roads_motorwayPath = config["paths"]["roads_motorways"]
-roads_primaryPath = config["paths"]["roads_primary"]
-militaryPath = config["paths"]["military"]
-radarPath = config["paths"]["radar"]
-shippingHighPath = config["paths"]["shipping_high"]
-shippingMedPath = config["paths"]["shipping_med"]
-fixed_platformsPath = config["paths"]["fixed_platforms"]
-floating_platformsPath = config["paths"]["float_platforms"]
-pipelinesPath = config["paths"]["pipelines"]
-demPath = config["paths"]["copernicus_DEM"]
-luisaPath = config["paths"]["luisa"]
+cdda = config["paths"]["cdda"]
+natura2000 = config["paths"]["natura2000"]
+corine = config["paths"]["corine"]
+cdda_overlap = config["paths"]["cdda_overlap_all"]
+natura_overlap = config["paths"]["natura_overlap_all"]
+forest_overlap = config["paths"]["forest_overlap"]
+bird_overlap = config["paths"]["bird_overlap"]
 
+levels = config["parameters"]["levels"]
+level_dimensions = config["parameters"]["level_dimensions"]
 desired_regions = config["parameters"]["desired_regions"]
-buffer_dict = config["parameters"]["buffer_distances"]
-hydrology_buffer = config["parameters"]["hydrology_buffer"]
-offshore_buffer = config["parameters"]["offshore_buffer"]
-maximum_slope = config["parameters"]["maximum_slope"]
 
 # --- Main ---
 
 localrules:
     all,
-    build_techExclusions,
-    build_slope,
-    offshoreInfraExcl,
-    merge_techExclusions,
+    build_shapes,
+    build_envExclusions,
 
 rule all:
     input:
-        expand(config["target"]),
+        expand(config["target"], zip, level=levels),
 
 rule build_shapes:
     input:
@@ -52,30 +39,26 @@ rule build_shapes:
     notebook:
         "notebooks/build_shapes.ipynb"
 
-
-rule merge_techExclusions:
+rule build_envExclusions:
     input:
-        bufferedPipes=rules.offshoreInfraExcl.output.bufferedPipes,
-        bufferedFloat=rules.offshoreInfraExcl.output.bufferedFloat,
-        bufferedFixed=rules.offshoreInfraExcl.output.bufferedFixed,
-        airports=rules.build_techExclusions.output.airportsTiff,
-        powerlines=rules.build_techExclusions.output.powerlines,
-        rail_narrow=rules.build_techExclusions.output.rail_narrow,
-        rail_rail=rules.build_techExclusions.output.rail_rail,
-        road_motorways_motor=rules.build_techExclusions.output.road_motorways_motor,
-        road_motorways_trunk=rules.build_techExclusions.output.road_motorways_trunk,
-        road_motorways_link=rules.build_techExclusions.output.road_motorways_link,
-        road_primary=rules.build_techExclusions.output.road_primary,
-        glacier=rules.build_techExclusions.output.glacier,
-        military=rules.build_techExclusions.output.military,
-        radar=rules.build_techExclusions.output.radar,
-        hydrology=rules.build_techExclusions.output.hydrology,
-        slope_max=rules.build_slope.output.slope_max,
-        shipping_high=rules.build_techExclusions.output.shipping_high,
-        shipping_med=rules.build_techExclusions.output.shipping_med,
-        luisaPort=rules.build_ports.output.luisaPort,
+        euroshape=rules.build_shapes.output.onshoreshape,
+        cdda=cdda,
+        natura2000=natura2000,
+        corine=corine,
+        cdda_overlap=cdda_overlap,
+        natura_overlap=natura_overlap,
+        forest_overlap=forest_overlap,
+    params:
+        desired_regions=desired_regions,
+        level_dimensions=level_dimensions
     output:
-        techExcl='results/technical_exclusions.tif'
+        envExcl='results/environmental_exclusions_{level}.tif'
     notebook:
-        'notebooks/merge_technExcl.ipynb'
+        "notebooks/build_envExclusions.ipynb"
+    #script:
+    #    scripts/build_envExclusions.py
+        
+        
+
+
 
