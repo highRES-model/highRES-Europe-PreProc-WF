@@ -9,6 +9,7 @@ euroshape = config["paths"]["euroshape"]
 cdda = config["paths"]["cdda"]
 natura2000 = config["paths"]["natura2000"]
 corine = config["paths"]["corine"]
+birds = config["paths"]["birds"]
 cdda_overlap = config["paths"]["cdda_overlap_all"]
 natura_overlap = config["paths"]["natura_overlap_all"]
 forest_overlap = config["paths"]["forest_overlap"]
@@ -45,9 +46,11 @@ rule build_envExclusions:
         cdda=cdda,
         natura2000=natura2000,
         corine=corine,
+        birds=birds,
         cdda_overlap=cdda_overlap,
         natura_overlap=natura_overlap,
         forest_overlap=forest_overlap,
+        bird_overlap=bird_overlap,
     params:
         desired_regions=desired_regions,
         level_dimensions=level_dimensions
