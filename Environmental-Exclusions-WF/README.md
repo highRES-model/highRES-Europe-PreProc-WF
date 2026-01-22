@@ -24,7 +24,7 @@ git clone git@github.com:highRES-model/highRES-Europe-PreProc-WF.git
 
 2. Install Snakemake and the associated conda environment. The recommended way is using [mamba](https://mamba.readthedocs.io/en/latest/installation.html) to install snakemake into its own conda environment from the environment file:
 ```sh
-mamba env create -f workflow/envs/environmental_exclusions.yaml`
+mamba env create -f workflow/envs/environmental_exclusions.yaml
 ```
 
 3. Acquire the data (see links in the description above) and setup the paths and potential modifications to the buffer distances in the config file.
