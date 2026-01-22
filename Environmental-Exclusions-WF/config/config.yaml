@@ -1,20 +1,20 @@
 target: "results/environmental_exclusions_{level}.tif"
 
 paths:
-  euroshape: "/home/oskar/shared_input/geodata/onshore/shapes/NUTS_RG_01M_2021_4326.geojson"
-  cdda: "/home/oskar/Desktop/uio/highRES_GitHub/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/cdda_BOKU_iucnCats.gpkg"
-  natura2000: "/home/oskar/Desktop/uio/highRES_GitHub/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/natura.2000_BOKU.gpkg"
-  corine: "/home/oskar/Desktop/uio/highRES_GitHub/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/corine.tif"
-  birds: "/home/oskar/Desktop/uio/highRES_GitHub/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/birds_and_bats_vulnerability.tif"
-  cdda_overlap_all: "/home/oskar/Desktop/uio/highRES_GitHub/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/CountryStats_cdda_boku_pixels_all_notouched.csv"
-  natura_overlap_all: "/home/oskar/Desktop/uio/highRES_GitHub/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/CountryStats_natura_boku_pixels_all_notouched.csv"
-  forest_overlap: "/home/oskar/Desktop/uio/highRES_GitHub/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/forests_overlap.csv"
-  bird_overlap: "/home/oskar/Desktop/uio/highRES_GitHub/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/percentile_overlap.csv"
+  euroshape: "/fp/homes01/u01/ec-oskarvaa/ec85/shared_input/geodata/onshore/shapes/NUTS_RG_01M_2021_4326.geojson"
+  cdda: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/cdda_BOKU_iucnCats.gpkg"
+  natura2000: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/natura.2000_BOKU.gpkg"
+  corine: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/corine.tif"
+  birds: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/birds_and_bats_vulnerability.tif"
+  cdda_overlap_all: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/CountryStats_cdda_boku_pixels_all_notouched.csv"
+  natura_overlap_all: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/CountryStats_natura_boku_pixels_all_notouched.csv"
+  forest_overlap: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/forests_overlap.csv"
+  bird_overlap: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/percentile_overlap.csv"
   
 parameters:
   levels : [
     "low",
-    #"medium",
+    "medium",
     "high",
   ]
   # Setting a filter to "overlap" switches it to be based on Guillermo"s WF footprint work. More details to be added. 
@@ -40,7 +40,7 @@ parameters:
       "birds_bats_filter" : "overlap",
       "peat" : False,
       "forests" : True,
-      "forest_filter" : "overlap",
+      "forests_filter" : "overlap",
     },
     "high" : {
       "iucn_filter" : ["Ia","Ib","II","III","IV","V","VI","notReported","notAssigned","notApplicable"],
@@ -49,10 +49,12 @@ parameters:
       "natura" : True,
       "natura_filter" : "all",
       #"buffer_natura" : 2000,
-      "birds_bats" : False, # This should be True
+      "birds_bats" : True,
+      "birds_bats_filter": "all",
+      "birds_bats_quantile" : 60,
       "peat" : True,
       "forests" : True,
-      "forest_filter" : "all"
+      "forests_filter" : "all"
     }
   }
 
