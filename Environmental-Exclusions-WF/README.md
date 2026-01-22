@@ -1,22 +1,17 @@
 # Environmental exclusions for Europe
 
-This sub-repository generates the environmental exclusion used in highRES-Europe. The particular application presented here is based on the work in the Horizon 2020 project [WIMBY](https://wimby.eu/) and is include in a forthcoming publication. 
+This sub-repository generates the environmental exclusion used in highRES-Europe. The particular application presented here is based on the work in the Horizon 2020 project [WIMBY](https://wimby.eu/) and is to be included in a forthcoming publication. 
 
 The Snakemake based workflow process highly detailed geospatial data, applies buffer distances to different type of environmental categories and produce raster files with the combined environmental exclusions. The raster files are later used in the [highRES-Europe Workflow](https://github.com/highRES-model/highRES-Europe-WF/) to determine the wind energy potential across different regions in Europe. 
 
 The workflow is customisable and can be modified to include additional/alternative data sources as well as different buffer distances. 
 
-<p align="center">
-    <img width="600" src="figures/technical_exclusions.png">
-</p>
-The figure above shows the resulting technical exclusions and how much land area is available for wind energy deployment (based on technical aspects only). 
-
 Datasets:
 * [Eurostat shapefiles](https://ec.europa.eu/eurostat/web/gisco/geodata/statistical-units/territorial-units-statistics), used as the base layer for specifying the spatial extent. 
-* [EU-Hydro River Network Database 2006-2012 (vector), Europe](https://land.copernicus.eu/en/products/eu-hydro/eu-hydro-river-network-database), used to exclude hydrological features.
-* [Copernicus DEM – GLO-90](https://doi.org/10.5270/ESA-c5d3d65), used to generate the maximum slope restrictions. 
-* [EMODnet Human Activities, Vessel Density Map](https://emodnet.ec.europa.eu/en/human-activities), used to exclude shipping lanes.
-* [Open Street Map](https://www.openstreetmap.org/), used to 
+* [Nationally designated areas (CDDA)](https://doi.org/10.2909/81f265d0-0734-4315-af0f-63721e937f57), used to exclude different IUCN categories.
+* [CORINE land Cover](https://land.copernicus.eu/en/products/corine-land-cover?tab=datasets), used to exclude forests and peat bogs. 
+* [Natura2000](https://www.eea.europa.eu/en/datahub/datahubitem-view/6fc8ad2d-195d-40f4-bdec-576e7d1268e4), used to exclude Natura2000 areas.
+* [Bird and bat vulnerability ](https://www.biorxiv.org/content/10.1101/2025.11.24.685024v1), used to exclude areas with high bird and bat vulnerability. The dataset is currently undergoing peer review and will soon be made publicly available. 
 
 ## Installation and usage
 
@@ -38,7 +33,7 @@ mamba env create -f workflow/envs/environmental_exclusions.yaml`
 
 ## Computational requirements
 
-Due to the high resolution GIS data and relatively large extent, the code in this repository requires considerable computational resources. Running the workflow requires about 30GB och memory, primarily due to `rule build_techExclusions` and the processing of the European road network. 
+Due to the high resolution GIS data and relatively large extent, the code in this repository requires considerable computational resources. Running the workflow requires about 32GB of RAM. It is possible to parallelize the workflow and run all scenario levels simultaneously. This will however put a higher strain on the peak RAM required and may be more suitable for High Performing Computing (HPC) clusters. 
 
 The code has been tested for the following system:
 
