@@ -1,0 +1,62 @@
+# Load parameters, paths and wildcards from config
+
+euroshape = config["paths"]["euroshape"]
+cdda = config["paths"]["cdda"]
+natura2000 = config["paths"]["natura2000"]
+corine = config["paths"]["corine"]
+birds = config["paths"]["birds"]
+cdda_overlap = config["paths"]["cdda_overlap_all"]
+natura_overlap = config["paths"]["natura_overlap_all"]
+forest_overlap = config["paths"]["forest_overlap"]
+bird_overlap = config["paths"]["bird_overlap"]
+
+levels = config["parameters"]["levels"]
+level_dimensions = config["parameters"]["level_dimensions"]
+desired_regions = config["parameters"]["desired_regions"]
+
+# --- Main ---
+
+localrules:
+    all,
+    build_shapes,
+    build_envExclusions,
+
+rule all:
+    input:
+        expand(config["target"], zip, level=levels),
+
+rule build_shapes:
+    input:
+        euroshape=euroshape,
+    output:
+        onshoreshape="intermediate_data/shapes/europe_onshore.geojson",
+    params:
+        desired_regions=desired_regions,
+    notebook:
+        "notebooks/build_shapes.ipynb"
+
+rule build_envExclusions:
+    input:
+        euroshape=rules.build_shapes.output.onshoreshape,
+        cdda=cdda,
+        natura2000=natura2000,
+        corine=corine,
+        birds=birds,
+        cdda_overlap=cdda_overlap,
+        natura_overlap=natura_overlap,
+        forest_overlap=forest_overlap,
+        bird_overlap=bird_overlap,
+    params:
+        desired_regions=desired_regions,
+        level_dimensions=level_dimensions
+    output:
+        envExcl='results/environmental_exclusions_{level}.tif'
+    notebook:
+        "notebooks/build_envExclusions.ipynb"
+    #script:
+    #    scripts/build_envExclusions.py
+        
+        
+
+
+

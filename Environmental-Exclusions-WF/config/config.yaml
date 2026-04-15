@@ -1,0 +1,66 @@
+target: "results/environmental_exclusions_{level}.tif"
+
+paths:
+  euroshape: "/fp/homes01/u01/ec-oskarvaa/ec85/shared_input/geodata/onshore/shapes/NUTS_RG_01M_2021_4326.geojson"
+  cdda: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/cdda_BOKU_iucnCats.gpkg"
+  natura2000: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/natura.2000_BOKU.gpkg"
+  corine: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/corine.tif"
+  birds: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/birds_and_bats_vulnerability.tif"
+  cdda_overlap_all: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/CountryStats_cdda_boku_pixels_all_notouched.csv"
+  natura_overlap_all: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/CountryStats_natura_boku_pixels_all_notouched.csv"
+  forest_overlap: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/forests_overlap.csv"
+  bird_overlap: "/fp/homes01/u01/ec-oskarvaa/ec85/models/oskar/highRES_preProcessing/highRES-Europe-PreProc-WF/Environmental-Exclusions-WF/resources/percentile_overlap.csv"
+  
+parameters:
+  levels : [
+    "low",
+    "medium",
+    "high",
+  ]
+  # Setting a filter to "overlap" switches it to be based on Guillermo"s WF footprint work. More details to be added. 
+  level_dimensions : {
+    "low" : {
+      "iucn_filter" : ["Ia","Ib","II","III","IV"],
+      "buffer" : 0,
+      #"buffer_iucn" : 0,
+      #"buffer_natura" : 0,
+      "natura" : False,
+      "birds_bats" : False,
+      "peat" : False,
+      "forests" : False,
+    },
+    "medium" : {
+      "iucn_filter" : "overlap",
+      "buffer" : 0,
+      #"buffer_iucn" : 0,
+      "natura" : True,
+      "natura_filter" : "overlap",
+      #"buffer_natura" : 0,
+      "birds_bats" : True,
+      "birds_bats_filter" : "overlap",
+      "peat" : False,
+      "forests" : True,
+      "forests_filter" : "overlap",
+    },
+    "high" : {
+      "iucn_filter" : ["Ia","Ib","II","III","IV","V","VI","notReported","notAssigned","notApplicable"],
+      "buffer" : 2000,
+      #"buffer_iucn" : 2000,
+      "natura" : True,
+      "natura_filter" : "all",
+      #"buffer_natura" : 2000,
+      "birds_bats" : True,
+      "birds_bats_filter": "all",
+      "birds_bats_quantile" : 60,
+      "peat" : True,
+      "forests" : True,
+      "forests_filter" : "all"
+    }
+  }
+
+  desired_regions : [
+    "AT", "BE", "BG", "CH", "CZ", "DE",
+    "DK", "EE", "ES", "FI", "FR", "UK",
+    "GR", "HR", "HU", "IE", "IT", "LT",
+    "LU", "LV", "NL", "NO", "PL", "PT", 
+    "RO", "SE", "SI", "SK",]
