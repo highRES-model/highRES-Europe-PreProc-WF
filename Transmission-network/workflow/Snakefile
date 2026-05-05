@@ -1,0 +1,36 @@
+# Load packages
+import itertools
+import pandas as pd
+import pathlib
+
+# Load parameters, paths and wildcards from config
+
+# euroshape = config["paths"]["euroshape"]
+
+# --- Main ---
+
+localrules:
+    all,
+
+rule all:
+    input:
+        expand(config["target"]),
+
+rule build_flexible_transmission:
+    input:
+        euroshape=config["paths"]["euroshape"],
+        existing_lines=config["paths"]["existing_lines"],
+        existing_links=config["paths"]["existing_links"],
+        new_lines=config["paths"]["new_lines"],
+        new_links=config["paths"]["new_links"],
+        upg_links=config["paths"]["upg_links"],
+        upg_lines=config["paths"]["upg_lines"],
+        tyndp=config["paths"]["tyndp"],
+        existing_transmission=config["paths"]["existing_transmission"],
+        transmission_params=config["paths"]["transmission_params"]
+    params:
+        transmission_alpha=config["parameters"]["transmission_alpha"]
+    output:
+        transdd='results/trans.dd'
+    notebook:
+        'notebooks/build_flexible_transmission.ipynb'
