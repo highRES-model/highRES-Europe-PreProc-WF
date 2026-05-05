@@ -11,6 +11,7 @@ dependencies:
   - odfpy
   - numpy
   - pandas
+  - geopandas
   - pyarrow
   - fastparquet
   - snakemake-minimal
