@@ -1,0 +1,9 @@
+resources/lines.csv
+resources/links.csv
+resources/new_lines.csv
+resources/new_links.csv
+resources/upgraded_lines.csv
+resources/upgraded_links.csv
+resources/tyndp_2020.csv
+.snakemake
+results/*
