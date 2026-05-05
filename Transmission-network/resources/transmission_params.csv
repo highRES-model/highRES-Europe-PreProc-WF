@@ -1,0 +1,6 @@
+,,"£k/MW/100km","£k/MW",,"per 100 km"
+"Technology","Technology Name (highRES)","line_capex","sub_capex","varom","loss"
+"HVAC Overhead line","HVAC_OHL",3.4520815292844,8.53133584544734,,0.007
+"HVDC Marine Interconnector","HVDC_MarineIC",7.58340964039764,22.5696715488025,,0.0035
+"HVDC Offshore wind","HVDC_Windoffshore",7.58340964039764,36.111474478084,,0.0035
+"HVAC Offshore wind","HVAC_Windoffshore",6.09381131817668,28.4377861514911,,0.007
