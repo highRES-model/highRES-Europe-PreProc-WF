@@ -9,7 +9,8 @@ paths:
   new_links : "resources/new_links.csv"
   upg_lines : "resources/upgraded_lines.csv"
   upg_links : "resources/upgraded_links.csv"
-  tyndp : "resources/tyndp_2020.csv"
+  tyndp2024 : "resources/tyndp_2024.csv"
+  tyndp2020 : "resources/tyndp_2020.csv"
   existing_transmission : "resources/existing_transmission.csv"
   transmission_params : "resources/transmission_params.csv"
 

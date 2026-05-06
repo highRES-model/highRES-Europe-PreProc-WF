@@ -25,12 +25,14 @@ rule build_flexible_transmission:
         new_links=config["paths"]["new_links"],
         upg_links=config["paths"]["upg_links"],
         upg_lines=config["paths"]["upg_lines"],
-        tyndp=config["paths"]["tyndp"],
+        tyndp2024=config["paths"]["tyndp2024"],
+        tyndp2020=config["paths"]["tyndp2020"],
         existing_transmission=config["paths"]["existing_transmission"],
         transmission_params=config["paths"]["transmission_params"]
     params:
         transmission_alpha=config["parameters"]["transmission_alpha"]
     output:
-        transdd='results/trans.dd'
+        transdd='results/trans.dd',
+        droppedLines='results/dropped_lines.csv'
     notebook:
         'notebooks/build_flexible_transmission.ipynb'
