@@ -131,12 +131,33 @@ rule calc_ev_demand_ts:
         act_profile=ev_act_profile,
     notebook:
         "notebooks/calc_ev_demand_ts.ipynb"
+
+rule calc_other_demand_ts:
+    input:
+        time_zones=time_zone_file,
+        annual_demands=abs_root_path / "resources\\other_dem_annual\\country_other_twh.csv",
+        rail_profiles=abs_root_path / "resources\\activity_profiles\\rail_profiles.csv",
+        commercial_and_light_industry_profiles=abs_root_path / "resources\\activity_profiles\\commercial_and_light_industry_profiles.csv",
+        residential_light_and_appliances_profiles=abs_root_path / "resources\\activity_profiles\\residential_light_and_appliances_profiles.csv"
+    output:
+        workpath / (demand_out_path + "rail_time_series_{year}.csv"),
+        workpath / (demand_out_path + "heavy_industry_time_series_{year}.csv"),
+        workpath / (demand_out_path + "commercial+light_industry_time_series_{year}.csv"),
+        workpath / (demand_out_path + "residential_time_series_{year}.csv")
+    params:
+        countries=countries,
+    notebook:
+        "notebooks/calc_other_demand_ts.ipynb"
         
 rule build_final_demand_ts:
     input:
         rules.calc_heat_cool_demand_ts.output[0],
         rules.calc_ev_demand_ts.output[0],
         rules.sub_existing_heat_cool.output[0],
+        rules.calc_other_demand_ts.output[0],
+        rules.calc_other_demand_ts.output[1],
+        rules.calc_other_demand_ts.output[2],
+        rules.calc_other_demand_ts.output[3],
     output:
         workpath / (demand_out_path + "demand_{year}.csv"),
     params:

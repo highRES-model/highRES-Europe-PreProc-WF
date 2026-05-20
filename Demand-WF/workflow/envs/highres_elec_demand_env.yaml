@@ -3,14 +3,14 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python
+  - python=3.12.12
   - jupyter
   - numpy
   - pandas
   - rioxarray
   - snakemake-minimal
   - numpy
-  - xarray=2024.3.0
+  - xarray=2024.7.0
   - pandas
   - matplotlib
   - python-calamine
